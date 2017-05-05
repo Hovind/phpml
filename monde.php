@@ -10,32 +10,40 @@
 			session_start();
 			$world = array(
 				array("name" => "Chambre jaune",
-					"outs" => array ("porte" => 1, "fenêtre" => 2),
-					"stuff" => array(0 => 3, 1 => 1),
-					"colour" => "red",
-					"points" => array(
-							array(10, 10),
-							array(10, 20),
-							array(20, 20),
-							array(20, 10))),
+					"outs" => array ("porte" => 1, "fenêtre" => 3),
+					"colour" => "yellow",
+					"x" => 10,
+					"y" => 10,
+					"width" => 80,
+					"height" => 80),
 				array("name" => "Chambre verte",
-					"outs" => array ("porte" => 0, "fenêtre" => 2),
-					"stuff" => array(0 => 1, 1 => 1),
+					"outs" => array ("porte" => 0, "fenêtre" => 3),
 					"colour" => "green",
-					"points" => array(
-							array(10, 20),
-							array(10, 30),
-							array(20, 30),
-							array(20, 20))),
+					"x" => 10,
+					"y" => 90,
+					"width" => 80,
+					"height" => 80),
+				array("name" => "Chambre rouge",
+					"outs" => array ("trou" => 3, "porte" => 4),
+					"colour" => "darksalmon",
+					"x" => 170,
+					"y" => 90,
+					"width" => 80,
+					"height" => 160),
 				array("name" => "Jardin",
-					"outs" => array ("fenêtre Jaune" => 0, "fenêtre verte" => 1),
-					"stuff" => array(0 => 2, 1 => 2),
-					"colour" => "blue",
-					"points" => array(
-							array(20, 10),
-							array(20, 20),
-							array(30, 20),
-							array(30, 10))));
+					"outs" => array ("fenêtre Jaune" => 0, "fenêtre verte" => 1, "trou" => 2, "fenêtre cave" => 4),
+					"colour" => "lightgreen",
+					"x" => 90,
+					"y" => 10,
+					"width" => 80,
+					"height" => 160),
+				array("name" => "Cave",
+					"outs" => array("fênetre" => 3, "porte" => 2),
+					"colour" => "lightgoldenrodyellow",
+					"x" => 90,
+					"y" => 170,
+					"width" => 80,
+					"height" => 80));
 			$objects = array("Green shell", "Red shell");
 
 			function default_unlogged_command() {
@@ -50,6 +58,12 @@
 				if (isset($usr)) {
 					$_SESSION["username"] = $usr;
 					$_SESSION["room"] = 0;
+					$_SESSION["stuff"] = array(
+						0 => array(0 => 3, 1 => 1),
+						1 => array(0 => 1, 1 => 1),
+						2 => array(0 => 1, 1 => 1),
+						3 => array(0 => 2, 1 => 2),
+						4 => array());
 					$_SESSION["inventory"] = array(0 => 1, 1 => 1);
 					default_logged_command();
 				}
@@ -61,6 +75,7 @@
 				$usr = $_SESSION["username"];
 				$room_index = $_SESSION["room"];
 				$inventory = $_SESSION["inventory"];
+				$stuff = $_SESSION["stuff"][$room_index];
 				$room = $world[$room_index];
 				echo "<h5>";
 				echo $usr;
@@ -79,11 +94,9 @@
 					echo "</p>";
 				}
 				echo "<p>&nbsp;</p>";
-				foreach ($room["stuff"] as $item_index => $quantity) {
+				foreach ($stuff as $item_index => $quantity) {
 					echo "<p>Prendre ";
-					echo "<a href='monde.php?command=take&room=";
-					echo $room_index;
-					echo "&item=";
+					echo "<a href='monde.php?command=take&item=";
 					echo $item_index;
 					echo "'>";
 					echo $objects[$item_index];
@@ -92,10 +105,20 @@
 					echo ")</p>";
 				}
 				echo "<h3>Inventory</h3>";
-				foreach ($inventory as $item_index => $quantity) {
+				/*foreach ($inventory as $item_index => $quantity) {
 					echo "<p>";
 					echo $objects[$item_index];
 					echo " (";
+					echo $quantity;
+					echo ")</p>";
+				}*/
+				foreach ($inventory as $item_index => $quantity) {
+					echo "<p>Mettre ";
+					echo "<a href='monde.php?command=put&item=";
+					echo $item_index;
+					echo "'>";
+					echo $objects[$item_index];
+					echo "</a> (";
 					echo $quantity;
 					echo ")</p>";
 				}
@@ -116,20 +139,37 @@
 				$_SESSION["room"] = $room_index;
 				default_logged_command();
 			}
-			function take($room_index, $item_index) {
-				global $world;
-				$_SESSION["inventory"][$item_index] += $world[$room_index]["stuff"][$item_index];
+			function take($item_index) {
+				$room_index = $_SESSION["room"];
+				$count = $_SESSION["stuff"][$room_index][$item_index];
+				$_SESSION["stuff"][$room_index][$item_index] -= $count;
+				$_SESSION["inventory"][$item_index] += $count;
 				default_logged_command();
 			}
-			function put() {
-				echo "<h1> Goodbye! </h1>";
+			function put($item_index) {
+				$room_index = $_SESSION["room"];
+				$count = $_SESSION["inventory"][$item_index];
+				$_SESSION["inventory"][$item_index] -= $count;
+				$_SESSION["stuff"][$room_index][$item_index] += $count;
 				default_logged_command();
 			}
 
 			function world_to_json() {
 				global $world;
-				header('Content-Type: application/json');
+				header("Content-Type: application/json");
 				echo json_encode($world);
+			}
+
+			function position_to_json() {
+				global $world;
+				$room_index = $_SESSION["room"];
+				$room = $world[$room_index];
+				$position = array(
+					"x" => $room["x"] + $room["width"] / 2,
+					"y" => $room["y"] + $room["height"] / 2,
+					"colour" => $room["colour"]); /* For animation purposes */
+				header("Content-Type: application/json");
+				echo json_encode($position);
 			}
 
 			$usr = $_SESSION["username"];
@@ -141,10 +181,18 @@
 					logout_command();
 				} else if ($cmd === "go" && isset($room)) {
 					go($room);
-				} else if ($cmd === "take" && isset($room) && isset($item)) {
-					take($room, $item);
-				else 
-				/*} else if ($cmd === "put") {*/
+				} else if ($cmd === "take" && isset($item)) {
+					take($item);
+				} else if ($cmd === "put" && isset($item)) {
+					put($item);
+				} else if ($cmd === "map") {
+					ob_clean(); /* Remove leading html */
+					world_to_json();
+					return; /* Avoid trailing html */
+				} else if ($cmd === "where") {
+					ob_clean(); /* Remove leading html */
+					position_to_json();
+					return; /* Avoid trailing html */
 				} else if (isset($cmd)) {
 					default_logged_command();
 				} else {
@@ -160,5 +208,3 @@
 		?>
 	</body>
 </html>
-
-
