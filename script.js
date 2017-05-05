@@ -1,4 +1,3 @@
-
 function get_json(url, callback) {
         var req = new XMLHttpRequest();
         req.onreadystatechange = function() {
@@ -11,6 +10,7 @@ function get_json(url, callback) {
 }
 
 window.onload = function() {
+	var path_name = window.location.pathname;
         var c = document.getElementById("map");
         var ctx = c.getContext("2d");
 
@@ -24,8 +24,8 @@ window.onload = function() {
 	                ctx.fillRect(world[i].x, world[i].y, world[i].width, world[i].height);
 	        }
 	}
-
-        get_json("/monde.php?command=map", render_map);
+	
+	get_json(path_name + "?command=map", render_map);
 	function render_mario(position, frame) {
 		frame = frame % 12;
 		img = new Image();
@@ -33,7 +33,7 @@ window.onload = function() {
 		if (frame_string.length < 2) {
 			frame_string = "0" + frame_string;
 		}
-		img.src = "mario" + frame_string + "s.png";
+		img.src = "arts/mario" + frame_string + "s.png";
 		img.onload = function() {
 	                ctx.fillStyle = position.colour;
 	                ctx.fillRect(position.x - 32, position.y - 32, 64, 64);
@@ -43,7 +43,7 @@ window.onload = function() {
 			render_mario(position, frame + 1);
 		}, 100);
 	}
-	get_json("/monde.php?command=where", function(position) {
+	get_json(path_name + "?command=where", function(position) {
 		render_mario(position, 0);
 	});
 		
